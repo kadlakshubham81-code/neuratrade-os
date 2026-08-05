@@ -39,6 +39,8 @@
   }
   .live-pill .dot{width:5px;height:5px;border-radius:50%;background:var(--green);
     box-shadow:0 0 0 3px rgba(52,211,153,0.2);}
+  .live-pill.err{color:var(--red);background:rgba(242,109,109,0.1);border-color:rgba(242,109,109,0.25);}
+  .live-pill.err .dot{background:var(--red);box-shadow:0 0 0 3px rgba(242,109,109,0.2);}
 
   .content{padding:18px;}
 
@@ -93,6 +95,14 @@
   .agent-name{font-size:9.5px;color:var(--text);font-weight:600;line-height:1.25;}
   .agent-time{font-family:'JetBrains Mono',monospace;font-size:7.5px;color:var(--muted);margin-top:4px;}
 
+  .journal-item{
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);
+    border-radius:10px;padding:12px 14px;margin-bottom:8px;
+  }
+  .journal-top{display:flex;justify-content:space-between;align-items:center;}
+  .journal-decision{font-size:13px;font-weight:600;color:var(--green);}
+  .journal-time{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);}
+  .journal-reason{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5;}
   .empty-note{
     text-align:center;padding:24px 10px;color:var(--muted);font-size:12.5px;
     background:var(--panel);border:1px dashed var(--line);border-radius:12px;line-height:1.6;
@@ -112,27 +122,46 @@
       <div class="brand-mark">N</div>
       <div class="brand-name">Neura<span>Trade</span> OS</div>
     </div>
-    <div class="live-pill"><span class="dot"></span>LIVE</div>
+    <div class="live-pill" id="livePill"><span class="dot"></span><span id="liveText">CONNECTING</span></div>
   </div>
 
   <div class="content">
 
     <div class="setup-banner">
-      <b>Version 1 — Foundation.</b> Ye website ban chuki hai aur live hai. Abhi data "sample" hai
-      kyunki backend agents (Daily, 4H, News, CEO...) agla step me connect honge. Jaise-jaise
-      agents banenge, yehi dashboard real data dikhana shuru kar dega.
+      <b>Version 2 — Database Connected.</b> Ye website ab Supabase se live connect hai.
+      Abhi table me sirf 1 default row hai (backend agents agla step me isko bharenge),
+      isliye "WAITING FOR DATA" dikh sakta hai — ye normal hai.
     </div>
 
     <div class="ceo-card wait" id="ceoCard">
       <div class="ceo-label"><span>CEO DECISION AI</span><span>BTCUSD</span></div>
-      <div class="ceo-decision wait-text" id="ceoDecision">WAITING FOR DATA</div>
-      <p class="ceo-sub" id="ceoSub">Backend agents abhi connect nahi hue hain — agla step isi dashboard ko live BTC data se jodega.</p>
+      <div class="ceo-decision wait-text" id="ceoDecision">LOADING...</div>
+      <p class="ceo-sub" id="ceoSub">Database se data fetch ho raha hai...</p>
+      <div class="ceo-stats" id="ceoStats" style="display:none;">
+        <div class="ceo-stat">
+          <div class="ceo-stat-label">Stop-Loss</div>
+          <div class="ceo-stat-val" id="statSL">--</div>
+        </div>
+        <div class="ceo-stat">
+          <div class="ceo-stat-label">Target</div>
+          <div class="ceo-stat-val" id="statTP">--</div>
+        </div>
+        <div class="ceo-stat">
+          <div class="ceo-stat-label">R:R</div>
+          <div class="ceo-stat-val" id="statRR">--</div>
+        </div>
+      </div>
     </div>
 
-    <div class="section-label"><span>12 AGENTS &middot; STATUS</span><b id="agentStatusLabel">SETUP PENDING</b></div>
+    <div class="section-label"><span>12 AGENTS &middot; STATUS</span><b id="agentStatusLabel">LOADING</b></div>
     <div class="agent-grid" id="agentGrid"></div>
 
-    <div class="watermark">NEURATRADE OS &middot; V1 &middot; FOUNDER: SHUBHAM</div>
+    <div class="section-label"><span>TRADE JOURNAL</span><b>RECENT</b></div>
+    <div id="journalList">
+      <div class="empty-note">Abhi tak koi journal entry nahi hai — jab CEO Decision Agent bane ga aur pehla trade signal aayega, tab yaha dikhega.</div>
+    </div>
+
+    <div class="watermark">NEURATRADE OS &middot; V2 &middot; FOUNDER: SHUBHAM</div>
 
   </div>
 
@@ -140,38 +169,152 @@
 
 <script>
 // ============================================
-// NeuraTrade OS — Version 1
-// Abhi ye static hai. Next step me Supabase se
-// real data fetch karne wala code yaha add hoga.
+// NeuraTrade OS — Version 2 (Supabase Connected)
+//
+// NEECHE DI GAYI 2 LINES ME APNI VALUES DAALO:
+// (Supabase se copy ki hui Project URL aur Publishable Key)
 // ============================================
 
+const SUPABASE_URL = "sb_publishable_Jw1g1RpwgRuq8JDvDELmuA_WdJJQB1n;
+const SUPABASE_KEY = "YOUR_SUPABASE_KEY_YAHA_DAALO";
+
 const agents = [
-  {icon:"📅", name:"Daily", t:"pending"},
-  {icon:"🕓", name:"4H Trend", t:"pending"},
-  {icon:"⏱", name:"1H Sweep", t:"pending"},
-  {icon:"📊", name:"15M BOS/FVG", t:"pending"},
-  {icon:"⚡", name:"5M Entry", t:"pending"},
-  {icon:"📰", name:"News", t:"pending"},
-  {icon:"🌐", name:"Analysis", t:"pending"},
-  {icon:"👔", name:"CEO", t:"pending"},
-  {icon:"📝", name:"Journal", t:"pending"},
-  {icon:"🎯", name:"Performance", t:"pending"},
-  {icon:"🔍", name:"Loss/Profit", t:"pending"},
-  {icon:"🛡", name:"Risk Mgmt", t:"pending"},
+  {icon:"📅", name:"Daily", col:"daily_high_low"},
+  {icon:"🕓", name:"4H Trend", col:"trend_4h"},
+  {icon:"⏱", name:"1H Sweep", col:"liquidity_1h"},
+  {icon:"📊", name:"15M BOS/FVG", col:"bos_fvg_15m"},
+  {icon:"⚡", name:"5M Entry", col:"entry_5m"},
+  {icon:"📰", name:"News", col:null},
+  {icon:"🌐", name:"Analysis", col:null},
+  {icon:"👔", name:"CEO", col:"ceo_decision"},
+  {icon:"📝", name:"Journal", col:null},
+  {icon:"🎯", name:"Performance", col:null},
+  {icon:"🔍", name:"Loss/Profit", col:null},
+  {icon:"🛡", name:"Risk Mgmt", col:"stop_loss"},
 ];
 
-const grid = document.getElementById('agentGrid');
-agents.forEach(a => {
-  const el = document.createElement('div');
-  el.className = 'agent-card';
-  el.innerHTML = `
-    <div class="status-dot" style="background:var(--muted)"></div>
-    <div class="agent-icon">${a.icon}</div>
-    <div class="agent-name">${a.name}</div>
-    <div class="agent-time">${a.t}</div>
-  `;
-  grid.appendChild(el);
-});
+async function fetchMarketData(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/market_data?select=*&order=id.desc&limit=1`, {
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      }
+    });
+    if(!res.ok) throw new Error("Fetch failed: " + res.status);
+    const data = await res.json();
+    return data[0] || null;
+  }catch(e){
+    console.error(e);
+    return null;
+  }
+}
+
+async function fetchJournal(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/trade_journal?select=*&order=id.desc&limit=5`, {
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      }
+    });
+    if(!res.ok) throw new Error("Fetch failed: " + res.status);
+    return await res.json();
+  }catch(e){
+    console.error(e);
+    return [];
+  }
+}
+
+function renderAgents(row){
+  const grid = document.getElementById('agentGrid');
+  grid.innerHTML = '';
+  agents.forEach(a => {
+    const hasData = a.col && row && row[a.col];
+    const el = document.createElement('div');
+    el.className = 'agent-card';
+    el.innerHTML = `
+      <div class="status-dot" style="background:${hasData ? 'var(--green)' : 'var(--muted)'}"></div>
+      <div class="agent-icon">${a.icon}</div>
+      <div class="agent-name">${a.name}</div>
+      <div class="agent-time">${hasData ? 'active' : 'pending'}</div>
+    `;
+    grid.appendChild(el);
+  });
+}
+
+function renderCEO(row){
+  const ceoCard = document.getElementById('ceoCard');
+  const ceoDecision = document.getElementById('ceoDecision');
+  const ceoSub = document.getElementById('ceoSub');
+  const ceoStats = document.getElementById('ceoStats');
+
+  if(row && row.ceo_decision){
+    ceoCard.classList.remove('wait');
+    ceoDecision.classList.remove('wait-text');
+    ceoDecision.textContent = row.ceo_decision;
+    ceoSub.textContent = row.daily_high_low || 'Analysis available.';
+    ceoStats.style.display = 'flex';
+    document.getElementById('statSL').textContent = row.stop_loss || '--';
+    document.getElementById('statTP').textContent = row.take_profit || '--';
+    document.getElementById('statRR').textContent = row.risk_reward || '--';
+  } else {
+    ceoDecision.textContent = 'WAITING FOR DATA';
+    ceoSub.textContent = 'Backend agents abhi CEO decision generate nahi kar rahe — agla step me connect honge.';
+  }
+}
+
+function renderJournal(entries){
+  const list = document.getElementById('journalList');
+  if(!entries || entries.length === 0){
+    list.innerHTML = '<div class="empty-note">Abhi tak koi journal entry nahi hai — jab CEO Decision Agent bane ga aur pehla trade signal aayega, tab yaha dikhega.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  entries.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'journal-item';
+    div.innerHTML = `
+      <div class="journal-top">
+        <span class="journal-decision">${e.decision || 'N/A'}</span>
+        <span class="journal-time">${new Date(e.created_at).toLocaleDateString()}</span>
+      </div>
+      <p class="journal-reason">${e.reasoning || ''}</p>
+    `;
+    list.appendChild(div);
+  });
+}
+
+async function loadDashboard(){
+  const livePill = document.getElementById('livePill');
+  const liveText = document.getElementById('liveText');
+
+  if(SUPABASE_URL.includes("YAHA_DAALO")){
+    liveText.textContent = "SETUP PENDING";
+    livePill.classList.add('err');
+    document.getElementById('ceoDecision').textContent = 'CONFIG PENDING';
+    document.getElementById('ceoSub').textContent = 'Supabase URL/Key abhi code me daalne baaki hain.';
+    renderAgents(null);
+    return;
+  }
+
+  const row = await fetchMarketData();
+  const journal = await fetchJournal();
+
+  if(row){
+    liveText.textContent = "LIVE";
+    livePill.classList.remove('err');
+  } else {
+    liveText.textContent = "NO DATA";
+    livePill.classList.add('err');
+  }
+
+  renderCEO(row);
+  renderAgents(row);
+  renderJournal(journal);
+}
+
+loadDashboard();
 </script>
 </body>
 </html>
