@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuraTrade OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0d13; --panel:#12161f; --panel-2:#0e1219;
+    --line: rgba(232,230,226,0.09);
+    --gold:#c9a24b; --green:#34d399; --red:#f26d6d;
+    --text:#eae7e0; --muted:#8a93a3;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;background:var(--ink);color:var(--text);font-family:'Inter',sans-serif;}
+  .phone{max-width:420px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:40px;}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 18px 14px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--ink);z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:9px;}
+  .brand-mark{
+    width:30px;height:30px;border-radius:8px;
+    background:linear-gradient(135deg,var(--gold),#8a6d2f);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:15px;color:var(--ink);
+  }
+  .brand-name{font-family:'Fraunces',serif;font-weight:600;font-size:16px;letter-spacing:-0.01em;}
+  .brand-name span{color:var(--gold);}
+  .live-pill{
+    display:flex;align-items:center;gap:6px;
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--green);
+    background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);
+    padding:5px 9px;border-radius:20px;
+  }
+  .live-pill .dot{width:5px;height:5px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 0 3px rgba(52,211,153,0.2);}
+
+  .content{padding:18px;}
+
+  .setup-banner{
+    background:rgba(201,162,75,0.1);border:1px solid rgba(201,162,75,0.3);
+    border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:12px;line-height:1.6;color:var(--text);
+  }
+  .setup-banner b{color:var(--gold);}
+
+  .ceo-card{
+    border-radius:18px;padding:22px 20px;position:relative;overflow:hidden;
+    background: linear-gradient(160deg, rgba(52,211,153,0.14), rgba(18,22,31,0.4) 60%), var(--panel);
+    border:1px solid rgba(52,211,153,0.25);
+  }
+  .ceo-card.wait{
+    background: linear-gradient(160deg, rgba(138,147,163,0.1), rgba(18,22,31,0.4) 60%), var(--panel);
+    border:1px solid var(--line);
+  }
+  .ceo-label{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;
+    text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;
+  }
+  .ceo-decision{
+    font-family:'Fraunces',serif;font-weight:600;font-size:28px;color:var(--green);
+    margin:10px 0 4px;letter-spacing:-0.01em;
+  }
+  .ceo-decision.wait-text{color:var(--muted);font-size:22px;}
+  .ceo-sub{font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .ceo-stats{display:flex;gap:10px;margin-top:16px;}
+  .ceo-stat{
+    flex:1;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+    padding:9px 10px;
+  }
+  .ceo-stat-label{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--muted);text-transform:uppercase;}
+  .ceo-stat-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);margin-top:3px;font-weight:600;}
+
+  .section-label{
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.1em;
+    text-transform:uppercase;color:var(--muted);margin:26px 0 12px;display:flex;justify-content:space-between;
+  }
+  .section-label b{color:var(--text);}
+
+  .agent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .agent-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:12px 8px;text-align:center;position:relative;
+  }
+  .agent-card .status-dot{
+    position:absolute;top:8px;right:8px;width:6px;height:6px;border-radius:50%;
+  }
+  .agent-icon{font-size:18px;margin-bottom:6px;}
+  .agent-name{font-size:9.5px;color:var(--text);font-weight:600;line-height:1.25;}
+  .agent-time{font-family:'JetBrains Mono',monospace;font-size:7.5px;color:var(--muted);margin-top:4px;}
+
+  .empty-note{
+    text-align:center;padding:24px 10px;color:var(--muted);font-size:12.5px;
+    background:var(--panel);border:1px dashed var(--line);border-radius:12px;line-height:1.6;
+  }
+
+  .watermark{
+    text-align:center;margin-top:30px;font-family:'JetBrains Mono',monospace;
+    font-size:9px;color:var(--muted);letter-spacing:0.08em;
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">N</div>
+      <div class="brand-name">Neura<span>Trade</span> OS</div>
+    </div>
+    <div class="live-pill"><span class="dot"></span>LIVE</div>
+  </div>
+
+  <div class="content">
+
+    <div class="setup-banner">
+      <b>Version 1 — Foundation.</b> Ye website ban chuki hai aur live hai. Abhi data "sample" hai
+      kyunki backend agents (Daily, 4H, News, CEO...) agla step me connect honge. Jaise-jaise
+      agents banenge, yehi dashboard real data dikhana shuru kar dega.
+    </div>
+
+    <div class="ceo-card wait" id="ceoCard">
+      <div class="ceo-label"><span>CEO DECISION AI</span><span>BTCUSD</span></div>
+      <div class="ceo-decision wait-text" id="ceoDecision">WAITING FOR DATA</div>
+      <p class="ceo-sub" id="ceoSub">Backend agents abhi connect nahi hue hain — agla step isi dashboard ko live BTC data se jodega.</p>
+    </div>
+
+    <div class="section-label"><span>12 AGENTS &middot; STATUS</span><b id="agentStatusLabel">SETUP PENDING</b></div>
+    <div class="agent-grid" id="agentGrid"></div>
+
+    <div class="watermark">NEURATRADE OS &middot; V1 &middot; FOUNDER: SHUBHAM</div>
+
+  </div>
+
+</div>
+
+<script>
+// ============================================
+// NeuraTrade OS — Version 1
+// Abhi ye static hai. Next step me Supabase se
+// real data fetch karne wala code yaha add hoga.
+// ============================================
+
+const agents = [
+  {icon:"📅", name:"Daily", t:"pending"},
+  {icon:"🕓", name:"4H Trend", t:"pending"},
+  {icon:"⏱", name:"1H Sweep", t:"pending"},
+  {icon:"📊", name:"15M BOS/FVG", t:"pending"},
+  {icon:"⚡", name:"5M Entry", t:"pending"},
+  {icon:"📰", name:"News", t:"pending"},
+  {icon:"🌐", name:"Analysis", t:"pending"},
+  {icon:"👔", name:"CEO", t:"pending"},
+  {icon:"📝", name:"Journal", t:"pending"},
+  {icon:"🎯", name:"Performance", t:"pending"},
+  {icon:"🔍", name:"Loss/Profit", t:"pending"},
+  {icon:"🛡", name:"Risk Mgmt", t:"pending"},
+];
+
+const grid = document.getElementById('agentGrid');
+agents.forEach(a => {
+  const el = document.createElement('div');
+  el.className = 'agent-card';
+  el.innerHTML = `
+    <div class="status-dot" style="background:var(--muted)"></div>
+    <div class="agent-icon">${a.icon}</div>
+    <div class="agent-name">${a.name}</div>
+    <div class="agent-time">${a.t}</div>
+  `;
+  grid.appendChild(el);
+});
+</script>
+</body>
+</html>
